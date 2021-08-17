@@ -35,9 +35,10 @@
 
             </tbody>
         </table>
-
-        <button type="button" class="btn-success" id="acceptline-btn">ACEPTAR</button>
-        <button type="button" class="btn-danger" id="cancelline-btn">CANCELAR</button>
+        <div id="nextlinebtns">
+            <button type="button" class="btn-success" id="acceptline-btn">ACEPTAR</button>
+            <button type="button" class="btn-danger" id="cancelline-btn">CANCELAR</button>
+        </div>
     </div>
 </p>
 
@@ -59,7 +60,7 @@
             <th data-field="name" data-sortable="true">NOMBRE</th>
             <th data-field="type" data-sortable="true" title="handler/cortador">🥏 / 🏃</th>
             <th data-field="gender" data-sortable="true" title="hombre/mujer">👩 / 🧔</th>
-            <th data-field="points" data-sortable="true" title="puntos jugados">PUNTOS JUGADOS</th>
+            <th data-field="points" data-sortable="true" title="puntos jugados" data-formatter="pointsFormatter" data-events="pointsEvents">PUNTOS JUGADOS</th>
             <th data-field="active" title="judagores disponibles" data-formatter="activeFormatter" data-events="activeEvents">ACTIVO</th>
         </tr>
     </thead>
@@ -71,6 +72,8 @@
 <script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>
 
 <script>
+
+    let acceptedLines = [];
 
     function getTable(){
         return $('#table');
@@ -120,6 +123,20 @@
         }
     }
 
+    function pointsFormatter(value, row, index) {
+        return `<a class="updatepoints-btn" href="javascript:void(0)" title="Actualizar Puntos">${value}</a>`;
+    }
+
+    window.pointsEvents = {
+        'click .updatepoints-btn': function (e, value, row, index) {
+            const newPoints = prompt('Cambiar puntos jugados: ', value);
+            const playerName = row.name;
+            const player = getPlayerData(playerName);
+            player.points = newPoints;
+            updatePointsPlayed(playerName, newPoints);
+        }
+    }
+
 
     function updatePointsPlayed(playerName, pointsPlayed){
         const $table = getTable();
@@ -152,7 +169,7 @@
     function getPointsPlayed(playerName){
         const player = getPlayerData(playerName);
         if(player){
-            return player.points || 0;
+            return (+player.points) || 0;
         }
         return null;
     }
@@ -269,6 +286,7 @@
             `);
         }
         $nextLine.show();
+        $('#nextlinebtns').show();
     }
 
 
@@ -290,6 +308,8 @@
                 showAllPlayers();
             }
         });
+
+        // sugerir una nueva linea
         $('#nextline-btn').click(function(){
             const girls = window.prompt('Cuántas Chicas?', '0');
             const handlers = window.prompt('Cuantos Handlers?', '0');
@@ -298,12 +318,24 @@
                 showLine(line);
             }
         });
+
         $('#cancelline-btn').click(function(){
             $('#nextline').hide();
         });
+
+        // aceptar linea
         $('#acceptline-btn').click(function(){
-            // TODO: guardar en array de lineas aceptadas, ocultar botones aceptar cancelar, sumar 1 punto jugado a los jugadores
+            const suggestedLine = getSuggestedLinePlayers();
+            acceptedLines.push(suggestedLine);
+            $('#nextlinebtns').hide();
+            $('.change-player-btn').prop('disabled', true);
+            for(const name of suggestedLine){
+                addPointPlayed(name);
+                updatePointsPlayed(name, getPlayerData(name).points);
+            }
         });
+
+        // cambiar jugador de la linea sugerida
         $('#nextline').on('click', '.change-player-btn', function(){
             const newPlayerName = $(this).closest('.change').find('.select-player').val();
             const alreadyInLine = getSuggestedLinePlayers();
@@ -314,6 +346,10 @@
                 $(this).closest('tr').find('.name').html(newPlayerName);
             }
         });
+
+        // actualizar puntos jugados manualmente
+
+
     });
 
 
