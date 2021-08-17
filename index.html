@@ -353,7 +353,18 @@
 
         // agregar jugador que no exista ya
         $('#addplayer-btn').click(function(){
-
+            const name = prompt('Nombre: ', '');
+            if( name ){
+                const isHandler = confirm('Es handler?');
+                const isFemale = confirm('Es mujer/niña?');
+                getTable().bootstrapTable('append', {
+                    name: name,
+                    handler: isHandler,
+                    female: isFemale,
+                    active: true,
+                    points: 0,
+                });
+            }
         });
 
 
