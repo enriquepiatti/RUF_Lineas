@@ -52,6 +52,7 @@
         data-sort-class="table-active"
         data-sortable="true"
         data-id-field="name"
+        data-unique-id="name"
         >
     <thead>
         <tr>
@@ -106,7 +107,7 @@
         const player = getPlayerData(playerName);
         player.active = value;
         const $table = getTable();
-        $table.bootstrapTable('updateCellByUniqueId', {name: playerName, field: 'active', value: player.active});
+        $table.bootstrapTable('updateCellByUniqueId', {id: playerName, field: 'active', value: player.active});
         $('#onlyactiveplayers').change();
     }
 
@@ -128,7 +129,7 @@
         //     value: 'Updated Name'
         // });
         // TODO: esto no funciona, necesita un ID forzadamente la libreria?
-        $table.bootstrapTable('updateCellByUniqueId', {name: playerName, field: 'points', value: pointsPlayed})
+        $table.bootstrapTable('updateCellByUniqueId', {id: playerName, field: 'points', value: pointsPlayed})
     }
 
     function getPlayerData(playerName){
@@ -171,18 +172,16 @@
         handlers = +handlers || 0;
         girls = +girls || 0;
         const line = [];
-        // const activePlayers = RUF_players.filter(player => player.active == true);
-        const activePlayers = RUF_players.filter(player => player.active === undefined);        // FIXME: only for test:
+        const activePlayers = getAllActivePlayers();
         activePlayers.sort(function(a, b) {
             const pointsA = a.points || 0;
             const pointsB = b.points || 0;
             return pointsA - pointsB;
         });
-        if(activePlayers < 7){
+        if(activePlayers.length < 7){
             alert('No hay suficientes jugadores activos');
             return null;
         }
-
 
         let pendingHandlers = handlers;
         let pendingGirls = girls;
@@ -243,18 +242,28 @@
     }
 
 
+    function getAllActivePlayers(){
+        const activePlayers = RUF_players.filter(player => player.active == true);
+        return activePlayers;
+    }
+
     function showLine(line){
         const $nextLine = $('#nextline');
         const $tbody = $nextLine.find('tbody');
         $tbody.html('');
+        const changePlayers = getAllActivePlayers();
+        changePlayers.sort((a, b) => a.name.localeCompare(b.name));
+        let changePlayersOptions = '';
+        changePlayers.forEach(p => changePlayersOptions += `<option value="${p.name}">${p.name}</option>`);
         for(const player of line){
             $tbody.append(`
             <tr>
                     <td class="name">${player.name}</td>
                     <td class="change">
-                        <button type="button" class="btn-light" class="change-handler-btn change-player-btn"> 🥏 </button>
-                        <button type="button" class="btn-light" class="change-cortador-btn change-player-btn"> 🏃 </button>
-                        <button type="button" class="btn-light" class="change-girl-btn change-player-btn"> 👩 </button>
+                        <select class="select-player">
+                            ${changePlayersOptions}
+                        </select>
+                        <button type="button" class="btn-primary change-player-btn">CAMBIAR JUGADOR</button>
                     </td>
                 </tr>
             `);
@@ -262,6 +271,14 @@
         $nextLine.show();
     }
 
+
+    function getSuggestedLinePlayers(){
+        const names = [];
+        $('#nextline').find('.name').each(function( index ) {
+            names.push($( this ).text());
+        });
+        return names;
+    }
 
     $(function() {
         initPlayersTable();
@@ -287,14 +304,15 @@
         $('#acceptline-btn').click(function(){
             // TODO: guardar en array de lineas aceptadas, ocultar botones aceptar cancelar, sumar 1 punto jugado a los jugadores
         });
-        $('#nextline').on('click', '.change-handler-btn', function(){
-            // TODO
-        });
-        $('#nextline').on('click', '.change-cortador-btn', function(){
-            // TODO
-        });
-        $('#nextline').on('click', '.change-girl-btn', function(){
-            // TODO
+        $('#nextline').on('click', '.change-player-btn', function(){
+            const newPlayerName = $(this).closest('.change').find('.select-player').val();
+            const alreadyInLine = getSuggestedLinePlayers();
+            if(alreadyInLine.includes(newPlayerName)){
+                alert(newPlayerName + ' ya está en la línea! elige otro reemplazo');
+            }
+            else {
+                $(this).closest('tr').find('.name').html(newPlayerName);
+            }
         });
     });
 
