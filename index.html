@@ -1,10 +1,306 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+    <script type="text/javascript" src="data.js"></script>
+
+    <title>RUF LINEAS</title>
 </head>
 <body>
+<h1>RUF</h1>
+
+
+<p>
+    <button type="button" class="btn-primary" id="nextline-btn">SIGUIENTE LINEA</button>
+    <div id="nextline" style="display: none">
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Cambiar Por</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+
+        <button type="button" class="btn-success" id="acceptline-btn">ACEPTAR</button>
+        <button type="button" class="btn-danger" id="cancelline-btn">CANCELAR</button>
+    </div>
+</p>
+
+<p>
+    <label><input type="checkbox" id="onlyactiveplayers"> Mostrar solo jugadores activos</label>
+</p>
+
+
+<table
+        id="table"
+        data-toggle="table"
+        data-sort-class="table-active"
+        data-sortable="true"
+        data-id-field="name"
+        >
+    <thead>
+        <tr>
+            <th data-field="name" data-sortable="true">NOMBRE</th>
+            <th data-field="type" data-sortable="true" title="handler/cortador">🥏 / 🏃</th>
+            <th data-field="gender" data-sortable="true" title="hombre/mujer">👩 / 🧔</th>
+            <th data-field="points" data-sortable="true" title="puntos jugados">PUNTOS JUGADOS</th>
+            <th data-field="active" title="judagores disponibles" data-formatter="activeFormatter" data-events="activeEvents">ACTIVO</th>
+        </tr>
+    </thead>
+</table>
+
+
+<!--<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js" integrity="sha384-eMNCOe7tC1doHpGoWe/6oMVemdAVTMs2xqW4mwXrXsW0L84Iytr2wi5v2QjrP/xp" crossorigin="anonymous"></script>-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.min.js" integrity="sha384-cn7l7gDp0eyniUwwAZgrzD06kc/tftFf19TOAs2zVinnD/C7E91j9yyk5//jjpt/" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>
+
+<script>
+
+    function getTable(){
+        return $('#table');
+    }
+
+    function initPlayersTable(){
+        const data = [];
+        // &#x1F60A;
+        // https://unicode.org/emoji/charts/full-emoji-list.html#1f3c3
+        for(const item of RUF_players){
+            data.push({
+                'name': item.name,
+                'type': item.handler ? '🥏' : '🏃',
+                'gender': item.female ? '👩' : '🧔',
+                'points': 0,
+                // 'active': '❌', // '✔'
+                'active': false,
+            });
+        }
+        const $table = getTable();
+        // $table.bootstrapTable({data: data});
+        $table.bootstrapTable('load', data);
+    }
+
+    // function genderFormatter(value, row, index) {
+    //     return value ? '👩' : '🧔';
+    // }
+
+    function activeFormatter(value, row, index) {
+        return value ? '<a class="deactivate-btn" href="javascript:void(0)" title="Desactivar Jugador"> ✔ </a>' : '<a class="activate-btn" href="javascript:void(0)" title="Activar Jugador"> ❌ </a>';
+    }
+
+    function activatePlayer(playerName, value){
+        const player = getPlayerData(playerName);
+        player.active = value;
+        const $table = getTable();
+        $table.bootstrapTable('updateCellByUniqueId', {name: playerName, field: 'active', value: player.active});
+        $('#onlyactiveplayers').change();
+    }
+
+    window.activeEvents = {
+        'click .deactivate-btn': function (e, value, row, index) {
+            activatePlayer(row.name, false);
+        },
+        'click .activate-btn': function (e, value, row, index) {
+            activatePlayer(row.name, true);
+        }
+    }
+
+
+    function updatePointsPlayed(playerName, pointsPlayed){
+        const $table = getTable();
+        // $table.bootstrapTable('updateCell', {
+        //     index: 1,
+        //     field: 'name',
+        //     value: 'Updated Name'
+        // });
+        // TODO: esto no funciona, necesita un ID forzadamente la libreria?
+        $table.bootstrapTable('updateCellByUniqueId', {name: playerName, field: 'points', value: pointsPlayed})
+    }
+
+    function getPlayerData(playerName){
+        for(const item of RUF_players){
+            if(item.name == playerName){
+                return item;
+            }
+        }
+        return null;
+        // $table.bootstrapTable('getRowByUniqueId', playerName);
+    }
+
+    function addPointPlayed(playerName){
+        const player = getPlayerData(playerName);
+        if(player){
+            player.points = getPointsPlayed(playerName) + 1;
+        }
+    }
+
+    function getPointsPlayed(playerName){
+        const player = getPlayerData(playerName);
+        if(player){
+            return player.points || 0;
+        }
+        return null;
+    }
+
+    function hideInactivePlayers(){
+        const $table = getTable();
+        $table.bootstrapTable('filterBy', {active: true})
+    }
+
+    function showAllPlayers(){
+        const $table = getTable();
+        $table.bootstrapTable('filterBy', {})
+    }
+
+
+    function suggestLine(handlers, girls){
+        handlers = +handlers || 0;
+        girls = +girls || 0;
+        const line = [];
+        // const activePlayers = RUF_players.filter(player => player.active == true);
+        const activePlayers = RUF_players.filter(player => player.active === undefined);        // FIXME: only for test:
+        activePlayers.sort(function(a, b) {
+            const pointsA = a.points || 0;
+            const pointsB = b.points || 0;
+            return pointsA - pointsB;
+        });
+        if(activePlayers < 7){
+            alert('No hay suficientes jugadores activos');
+            return null;
+        }
+
+
+        let pendingHandlers = handlers;
+        let pendingGirls = girls;
+
+        // aseguramos los handlers requeridos
+        for(const player of activePlayers){
+            if(pendingHandlers > 0){
+                if(player.handler && !line.includes(player)){
+                    line.push(player);
+                    pendingHandlers--;
+                }
+            }
+            else {
+                break;
+            }
+        }
+        if(pendingHandlers > 0) {
+            alert('No hay suficientes Handlers!');
+        }
+
+        // aseguramos las chicas requeridas
+        for(const player of line){
+            if(player.female){
+                pendingGirls--;
+            }
+        }
+        for(const player of activePlayers){
+            if(pendingGirls > 0){
+                if(player.female && !line.includes(player)){
+                    line.push(player);
+                    pendingGirls--;
+                }
+            }
+            else {
+                break;
+            }
+        }
+        if(pendingGirls > 0) {
+            alert('No hay suficientes Chicas!');
+        }
+
+
+        if(line.length > 7){
+            alert('Demasiados handles y chicas para solo 7!');
+            return null;
+        }
+
+        // completamos linea
+        for(const player of activePlayers){
+            if(line.length === 7){
+                break;
+            }
+            if(!line.includes(player)){
+                line.push(player);
+            }
+        }
+        return line;
+    }
+
+
+    function showLine(line){
+        const $nextLine = $('#nextline');
+        const $tbody = $nextLine.find('tbody');
+        $tbody.html('');
+        for(const player of line){
+            $tbody.append(`
+            <tr>
+                    <td class="name">${player.name}</td>
+                    <td class="change">
+                        <button type="button" class="btn-light" class="change-handler-btn change-player-btn"> 🥏 </button>
+                        <button type="button" class="btn-light" class="change-cortador-btn change-player-btn"> 🏃 </button>
+                        <button type="button" class="btn-light" class="change-girl-btn change-player-btn"> 👩 </button>
+                    </td>
+                </tr>
+            `);
+        }
+        $nextLine.show();
+    }
+
+
+    $(function() {
+        initPlayersTable();
+        $('#onlyactiveplayers').change(function(){
+            if(this.checked){
+                hideInactivePlayers();
+            }
+            else {
+                showAllPlayers();
+            }
+        });
+        $('#nextline-btn').click(function(){
+            const girls = window.prompt('Cuántas Chicas?', '0');
+            const handlers = window.prompt('Cuantos Handlers?', '0');
+            const line = suggestLine(handlers, girls);
+            if(line){
+                showLine(line);
+            }
+        });
+        $('#cancelline-btn').click(function(){
+            $('#nextline').hide();
+        });
+        $('#acceptline-btn').click(function(){
+            // TODO: guardar en array de lineas aceptadas, ocultar botones aceptar cancelar, sumar 1 punto jugado a los jugadores
+        });
+        $('#nextline').on('click', '.change-handler-btn', function(){
+            // TODO
+        });
+        $('#nextline').on('click', '.change-cortador-btn', function(){
+            // TODO
+        });
+        $('#nextline').on('click', '.change-girl-btn', function(){
+            // TODO
+        });
+    });
+
+
+
+</script>
 
 </body>
 </html>
