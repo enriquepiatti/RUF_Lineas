@@ -88,6 +88,7 @@
         const data = [];
         // &#x1F60A;
         // https://unicode.org/emoji/charts/full-emoji-list.html#1f3c3
+        RUF_players.sort((a, b) => a.name.localeCompare(b.name));
         for(const item of RUF_players){
             data.push({
                 'name': item.name,
@@ -372,10 +373,7 @@
     });
 
 
-
-    // TODO:
-    // que el modelo sea directamente la tabla, usar el data.js solo como arranque inicial para precargar
-    // permitir agregar jugadores a la tabla, con prompt y confirm pedir los datos del nuevo jugador
+    // TODO: llevar  tiempo de juego de cada jugador, para tomar en cuenta eso también a la hora de priorizar la linea
 
 
 
