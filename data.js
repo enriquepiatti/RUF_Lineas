@@ -87,6 +87,7 @@ let RUF_players = [
     { name: 'Toby', handler: false, female: false, },
     { name: 'Tomy', handler: false, female: false, },
     { name: 'Javi', handler: true, female: false, },
-{ name: 'Castor', handler: false, female: false, },
+    { name: 'Castor', handler: false, female: false, },
+    { name: 'Mariano', handler: false, female: false, },
 
 ];
